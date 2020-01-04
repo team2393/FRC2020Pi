@@ -46,14 +46,14 @@ public class SectorColorPipeline implements VisionPipeline
   // Minumum and maximum HLS range for each color
   private final Scalar[] hls_min =
   {
-    new Scalar( 90.0, 100.0,   0.0), // Blue
+    new Scalar( 10.0, 100.0,   0.0), // Blue
     new Scalar( 30.0,  90.0,   0.0), // Green
     new Scalar(  0.0,  70.0, 200.0), // Red
     new Scalar( 15.0, 100.0, 200.0)  // Yellow
   };
   private final Scalar[] hls_max =
   {
-    new Scalar(130.0, 180.0,  40.0), // Blue
+    new Scalar( 90.0, 180.0,  40.0), // Blue
     new Scalar( 45.0, 180.0,  70.0), // Green
     new Scalar( 10.0, 120.0, 255.0), // Red
     new Scalar( 25.0, 180.0, 255.0)  // Yellow
