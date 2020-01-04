@@ -1,38 +1,21 @@
 /*----------------------------------------------------------------------------*/
-/* Copyright (c) 2019 FIRST Team 2393. All Rights Reserved.                             */
+/* Copyright (c) 2019 FIRST Team 2393. All Rights Reserved.                   */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import edu.wpi.cscore.CvSource;
-import edu.wpi.cscore.MjpegServer;
 import edu.wpi.cscore.UsbCamera;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.cscore.VideoMode.PixelFormat;
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.networktables.EntryListenerFlags;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.vision.VisionPipeline;
 import edu.wpi.first.vision.VisionThread;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import org.opencv.core.Mat;
 
 /** Vision processing code for Raspberry Pi FRCVision */
 public final class Main
@@ -85,9 +68,9 @@ public final class Main
     final CvSource processed = server.putVideo("Processed", width, height);
 
     // Select a pipeline to process the image
-    // final MyPipeline my_pipeline = new MyPipeline(processed, width, height);
-    final PinkBlobPipeline my_pipeline = new PinkBlobPipeline(processed, width, height);
-
+    // final PinkBlobPipeline my_pipeline = new PinkBlobPipeline(processed, width, height);
+    final SectorColorPipeline my_pipeline = new SectorColorPipeline(processed, width, height);
+    
     final VisionThread vision_thread = new VisionThread(camera, my_pipeline, pipeline ->
     {
       // Our pipeline just updated image image on the dashboard.
