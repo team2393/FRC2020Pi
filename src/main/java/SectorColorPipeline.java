@@ -80,12 +80,9 @@ public class SectorColorPipeline implements VisionPipeline
    *  @param max Maximum HLS
    *  @return true if HLS within min..max
    */
-  private boolean isMatch(int hue, final int lum, final int sat,
+  private boolean isMatch(final int hue, final int lum, final int sat,
                           final Scalar min, final Scalar max)
   {
-    // Consider 175 close enough to red == 0
-    if (hue >= 175)
-      hue = 0;
     return min.val[0] <= hue  &&  hue <= max.val[0]  &&
            min.val[1] <= lum  &&  lum <= max.val[1]  &&
            min.val[2] <= sat  &&  sat <= max.val[2]; 
@@ -128,58 +125,76 @@ public class SectorColorPipeline implements VisionPipeline
     // Convert to HLS
     Imgproc.cvtColor(norm, hls, Imgproc.COLOR_BGR2HLS);
 
-    // Probe HLS at center of image
+    // Probe HLS at center of image,
+    // averaging over 9 pixels at center x, y +-1
     int center_h = 0, center_l = 0, center_s = 0;
-    final byte[] probe = new byte[3];
-    hls.get(proc_height/2, proc_width/2, probe);
-    center_h += Byte.toUnsignedInt(probe[0]);
-    center_l += Byte.toUnsignedInt(probe[1]);
-    center_s += Byte.toUnsignedInt(probe[2]);
+    for (int x=-1; x<2; ++x)
+      for (int y=-1; y<2; ++y)
+      {
+        final byte[] probe = new byte[3];
+        hls.get(proc_height/2 + x, proc_width/2 + y, probe);
+
+        // Consider 175 close enough to red == 0
+        int hue = Byte.toUnsignedInt(probe[0]);
+        if (hue >= 175)
+          hue = 0;
+        center_h += hue;
+        center_l += Byte.toUnsignedInt(probe[1]);
+        center_s += Byte.toUnsignedInt(probe[2]);
+      }
+    center_h /= 9;
+    center_l /= 9;
+    center_s /= 9;
 
     // Check if center color matches any of the expected colors
     final int color_index = getMatchingColor(center_h, center_l, center_s);
 
-    // // Filter on Hue, Luminance and Saturation to get pink,
-    // // using the hls_min/max values that can be updated on the dashboard.
-    // Core.inRange(hls, hls_min, hls_max, filt);
+    double max_area = 0.0;
+    if (color_index >= 0)
+    {
+      // Filter on that Hue, Luminance and Saturation to get pink,
+      Core.inRange(hls, hls_min[color_index], hls_max[color_index], filt);
+      
+      // Find contours
+      contours.clear();
+      Imgproc.findContours(filt, contours, tmp, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
-    // // Find contours
-    // contours.clear();
-    // Imgproc.findContours(filt, contours, tmp, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-
-    // // Get largest contour
-    // double max_area = 0.0;
-    // Rect largest = null;
-    // for (int i=0; i<contours.size(); ++i)
-    // {
-    //   final MatOfPoint contour = contours.get(i);
-    //   final double area = Imgproc.contourArea(contour);
-    //   if (area > max_area)
-    //   {
-    //     max_area = area;
-    //     largest = Imgproc.boundingRect(contour);
-    //   }
-    // }
-
-    // if (largest != null)
-    // {
-    //   // Rect around the largest blob
-    //   Imgproc.rectangle(frame,
-    //                     new Point(largest.x * scale, largest.y * scale),
-    //                     new Point((largest.x + largest.width) * scale,
-    //                               (largest.y + largest.height)* scale),
-    //                     overlay_bgr);
-
+      // Get largest contour
+      Rect largest = null;
+      for (int i=0; i<contours.size(); ++i)
+      {
+        final MatOfPoint contour = contours.get(i);
+        final double area = Imgproc.contourArea(contour);
+        if (area > max_area)
+        {
+          max_area = area;
+          largest = Imgproc.boundingRect(contour);
+        }
+      }
+  
+      if (largest != null)
+      {
+        // Rect around the largest blob
+        Imgproc.rectangle(frame,
+                          new Point(largest.x * scale, largest.y * scale),
+                          new Point((largest.x + largest.width) * scale,
+                                    (largest.y + largest.height)* scale),
+                          overlay_bgr);
+      }
+    }
+    
     // Show rect in center of image where pixel info is probed
     Imgproc.rectangle(frame,
-                      new Point(width/2 - 2, height/2 - 2),
-                      new Point(width/2 + 2, height/2 + 2),
-                      overlay_bgr);
-
+    new Point(width/2 - 2, height/2 - 2),
+    new Point(width/2 + 2, height/2 + 2),
+    overlay_bgr);
+    
     // Show info at bottom of image.
-    // Paint is twice, overlay-on-black, for better contrast
+    // Paint it twice, overlay-on-black, for better contrast
     final String color_name = color_index >= 0 ? colors[color_index] : "Unknown";
-    SmartDashboard.putString("Detected Color", color_name);
+    SmartDashboard.putNumber("Color Area", max_area);
+    SmartDashboard.putString("Color", color_name);
+    SmartDashboard.putNumber("Color Idx", color_index);
     SmartDashboard.putNumber("Center H", center_h);
     SmartDashboard.putNumber("Center L", center_l);
     SmartDashboard.putNumber("Center S", center_s);
@@ -209,8 +224,5 @@ public class SectorColorPipeline implements VisionPipeline
     // output.putFrame(tmp1);
     // b) Show original image with overlay
     output.putFrame(frame);
-
-    // Indicate that we handled one more frame
-    calls.incrementAndGet();
   }
 }
