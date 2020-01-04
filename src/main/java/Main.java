@@ -44,10 +44,8 @@ public final class Main
     // ...
     // If you set the periodic rate very slow and call Flush() immediately
     // after updating the values, latency is minimized to basically zero.
-    // This is how the Limelight gets low latency updates via NetworkTables.
-    
-    // Increase update rate to the max of 0.01
-    ntinst.setUpdateRate(0.01);
+    // This is how the Limelight gets low latency updates via NetworkTables.    
+    ntinst.setUpdateRate(1.00);
 
     // Start camera
     System.out.println("Starting camera");
