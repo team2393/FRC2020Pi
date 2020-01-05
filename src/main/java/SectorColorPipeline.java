@@ -32,31 +32,27 @@ public class SectorColorPipeline implements VisionPipeline
   private final int width, height, proc_width, proc_height;
 
   // Intermediate images used for processing
-  private final Mat small = new Mat(), norm = new Mat(), hls = new Mat(), filt = new Mat(), tmp = new Mat();
+  private final Mat small = new Mat(), norm = new Mat(), filt = new Mat(), tmp = new Mat();
 
   // Counter for calls to `process()`
   public AtomicInteger calls = new AtomicInteger();
 
-  // Hue, Luminance, Saturation filter
-  // Pink has hue 300 on 0-360 scale.
-  // OpenCV uses a 0-180 scale, i.e. pink = 150 (within 140..160).
-
+  // Color names
   final String[] colors = { "Blue", "Green", "Red", "Yellow" };
 
-  // Minumum and maximum HLS range for each color
-  private final Scalar[] hls_min =
+  // Minumum and maximum BGR range for each color
+  private final Scalar[] bgr_min =
   {
-    new Scalar( 10.0, 100.0,   0.0), // Blue
-    new Scalar( 30.0,  90.0,   0.0), // Green
-    new Scalar(  0.0,  70.0, 200.0), // Red
-    new Scalar( 15.0, 100.0, 200.0)  // Yellow
-  };
-  private final Scalar[] hls_max =
+    new Scalar(150.0,   0.0,   0.0), // Blue
+    new Scalar(  0.0, 130.0,   0.0), // Green
+    new Scalar(  0.0,   0.0, 140.0), // Red
+    new Scalar(  0.0, 165.0, 190.0)  // Yellow
+  },                     bgr_max =
   {
-    new Scalar( 90.0, 180.0,  40.0), // Blue
-    new Scalar( 45.0, 180.0,  70.0), // Green
-    new Scalar( 10.0, 120.0, 255.0), // Red
-    new Scalar( 25.0, 180.0, 255.0)  // Yellow
+    new Scalar(255.0, 160.0, 120.0), // Blue
+    new Scalar(145.0, 255.0, 120.0), // Green
+    new Scalar( 75.0,  50.0, 255.0), // Red
+    new Scalar(125.0, 255.0, 255.0)  // Yellow
   };
 
   private final List<MatOfPoint> contours = new ArrayList<>();
@@ -64,7 +60,7 @@ public class SectorColorPipeline implements VisionPipeline
   // Colors for drawing overlay
   private final Scalar overlay_bgr = new Scalar(200.0, 100.0, 255.0), contrast_bgr = new Scalar(0, 0, 0);
 
-  SectorColorPipeline(final CvSource output, int width, int height)
+  SectorColorPipeline(final CvSource output, final int width, final int height)
   {
     this.output = output;
     this.width = width;
@@ -73,32 +69,33 @@ public class SectorColorPipeline implements VisionPipeline
     proc_height = height / scale;
   }
 
-  /** @param hue
-   *  @param lum
-   *  @param sat
-   *  @param min Minimum HLS
-   *  @param max Maximum HLS
-   *  @return true if HLS within min..max
+  /** @param blue
+   *  @param green
+   *  @param red
+   *  @param min Minimum BGR
+   *  @param max Maximum BGR
+   *  @return true if BGR within min..max
    */
-  private boolean isMatch(final int hue, final int lum, final int sat,
+  private boolean isMatch(final int blue, final int green, final int red,
                           final Scalar min, final Scalar max)
   {
-    return min.val[0] <= hue  &&  hue <= max.val[0]  &&
-           min.val[1] <= lum  &&  lum <= max.val[1]  &&
-           min.val[2] <= sat  &&  sat <= max.val[2]; 
+    return min.val[0] <= blue   &&  blue  <= max.val[0]  &&
+           min.val[1] <= green  &&  green <= max.val[1]  &&
+           min.val[2] <= red    &&  red   <= max.val[2]; 
   }
 
-  /** Check if HLS matches one of the expected colors
-   *  @param hue
-   *  @param lum
-   *  @param sat
+  /** Check if BGR matches one of the expected colors
+   *  @param blue
+   *  @param green
+   *  @param red
    *  @return Color 0, 1, 2, 3 or -1 if no match found
    */
-  private int getMatchingColor(final int hue, final int lum, final int sat)
+  private int getMatchingColor(final int blue, final int green, final int red)
   {
     for (int i=0; i<colors.length; ++i)
-      if (isMatch(hue, lum, sat, hls_min[i], hls_max[i]))
+      if (isMatch(blue, green, red, bgr_min[i], bgr_max[i]))
         return i;
+    // No match
     return -1;
   }
 
@@ -109,7 +106,6 @@ public class SectorColorPipeline implements VisionPipeline
     // 1) Resize original frame to smaller tmp1
     // 2) Normalize tmp1 into tmp2
     // 3) Convert RGB from tmp2 into HLS tmp1
-    // 4) ...
     // .. but that resulted in strange values for HLS,
     // like H > 180.
     // So re-using Mats across process calls,
@@ -122,45 +118,40 @@ public class SectorColorPipeline implements VisionPipeline
     // Scale colors to use full 0..255 range in case image was dark
     Core.normalize(small, norm, 0.0, 255.0, Core.NORM_MINMAX);
 
-    // Convert to HLS
-    Imgproc.cvtColor(norm, hls, Imgproc.COLOR_BGR2HLS);
-
-    // Probe HLS at center of image,
-    // averaging over 9 pixels at center x, y +-1
-    int center_h = 0, center_l = 0, center_s = 0;
-    for (int x=-1; x<2; ++x)
-      for (int y=-1; y<2; ++y)
+    // Probe BGR at center of image,
+    int center_b = 0, center_g = 0, center_r = 0;
+    // Average over 9 pixels at center x, y +-1
+    final byte[] probe = new byte[3];
+    int avg = 0;
+    for (int x=-1; x<=1; ++x)
+      for (int y=-1; y<=1; ++y)
       {
-        final byte[] probe = new byte[3];
-        hls.get(proc_height/2 + x, proc_width/2 + y, probe);
-
-        // Consider 175 close enough to red == 0
-        int hue = Byte.toUnsignedInt(probe[0]);
-        if (hue >= 175)
-          hue = 0;
-        center_h += hue;
-        center_l += Byte.toUnsignedInt(probe[1]);
-        center_s += Byte.toUnsignedInt(probe[2]);
+        norm.get(proc_height/2 + x, proc_width/2 + y, probe);
+        center_b += Byte.toUnsignedInt(probe[0]);
+        center_g += Byte.toUnsignedInt(probe[1]);
+        center_r += Byte.toUnsignedInt(probe[2]);
+        ++avg;
       }
-    center_h /= 9;
-    center_l /= 9;
-    center_s /= 9;
+    center_b /= avg;
+    center_g /= avg;
+    center_r /= avg;
 
     // Check if center color matches any of the expected colors
-    final int color_index = getMatchingColor(center_h, center_l, center_s);
+    final int color_index = getMatchingColor(center_b, center_g, center_r);
 
     double max_area = 0.0;
     if (color_index >= 0)
     {
-      // Filter on that Hue, Luminance and Saturation to get pink,
-      Core.inRange(hls, hls_min[color_index], hls_max[color_index], filt);
+      // Filter on that BGR range
+      Core.inRange(norm, bgr_min[color_index], bgr_max[color_index], filt);
       
       // Find contours
       contours.clear();
       Imgproc.findContours(filt, contours, tmp, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-
+      
       // Get largest contour
       Rect largest = null;
+      MatOfPoint largest_contour = null;
       for (int i=0; i<contours.size(); ++i)
       {
         final MatOfPoint contour = contours.get(i);
@@ -168,26 +159,39 @@ public class SectorColorPipeline implements VisionPipeline
         if (area > max_area)
         {
           max_area = area;
-          largest = Imgproc.boundingRect(contour);
+          largest_contour = contour;
+          // largest = Imgproc.boundingRect(contour);
         }
       }
   
-      if (largest != null)
+      // Show the largest contour (slower)
+      if (largest_contour != null)
       {
-        // Rect around the largest blob
+        final int points = largest_contour.size(0);
+        Point last = null;
+        for (int i=0; i<points; ++i)
+        {
+          final double[] xy = largest_contour.get(i, 0);
+          final Point point = new Point(xy[0]*scale, xy[1]*scale);
+          if (i > 0)
+            Imgproc.line(frame, last, point, overlay_bgr);
+          last = point;
+        }
+      }
+      // Just show rect around the largest blob (faster)
+      if (largest != null)
         Imgproc.rectangle(frame,
                           new Point(largest.x * scale, largest.y * scale),
                           new Point((largest.x + largest.width) * scale,
                                     (largest.y + largest.height)* scale),
                           overlay_bgr);
-      }
     }
     
     // Show rect in center of image where pixel info is probed
     Imgproc.rectangle(frame,
-    new Point(width/2 - 2, height/2 - 2),
-    new Point(width/2 + 2, height/2 + 2),
-    overlay_bgr);
+                      new Point(width/2 - 2, height/2 - 2),
+                      new Point(width/2 + 2, height/2 + 2),
+                      overlay_bgr);
     
     // Show info at bottom of image.
     // Paint it twice, overlay-on-black, for better contrast
@@ -195,14 +199,14 @@ public class SectorColorPipeline implements VisionPipeline
     SmartDashboard.putNumber("Color Area", max_area);
     SmartDashboard.putString("Color", color_name);
     SmartDashboard.putNumber("Color Idx", color_index);
-    SmartDashboard.putNumber("Center H", center_h);
-    SmartDashboard.putNumber("Center L", center_l);
-    SmartDashboard.putNumber("Center S", center_s);
-    final String info = String.format("Frame %3d H %3d L %3d S %3d %s",
+    SmartDashboard.putNumber("Center B", center_b);
+    SmartDashboard.putNumber("Center G", center_g);
+    SmartDashboard.putNumber("Center R", center_r);
+    final String info = String.format("Frame %3d B %3d G %3d R %3d %s",
                                       calls.incrementAndGet(),
-                                      center_h,
-                                      center_l,
-                                      center_s,
+                                      center_b,
+                                      center_g,
+                                      center_r,
                                       color_name);
     Imgproc.putText(frame,
                     info,
