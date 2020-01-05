@@ -40,6 +40,18 @@ public class SectorColorPipeline implements VisionPipeline
   // Color names
   final String[] colors = { "Blue", "Green", "Red", "Yellow" };
 
+  // The game manual defines the colors via CMY,
+  // which should convert to RGB via
+  // R = 255 - C
+  // G = 255 - M
+  // M = 255 - Y
+  //
+  //          C      M    Y      R    G    B
+  // "Blue"   255,   0,   0        0, 255, 255
+  // "Green"  255,   0, 255        0, 255,   0
+  // "Red"      0, 255, 255      255,   0,   0
+  // "Yellow"   0,   0, 255      255, 255,   0
+  //
   // Minumum and maximum BGR range for each color
   private final Scalar[] bgr_min =
   {
@@ -49,7 +61,7 @@ public class SectorColorPipeline implements VisionPipeline
     new Scalar(  0.0, 165.0, 190.0)  // Yellow
   },                     bgr_max =
   {
-    new Scalar(255.0, 160.0, 120.0), // Blue
+    new Scalar(255.0, 255.0, 120.0), // Blue
     new Scalar(145.0, 255.0, 120.0), // Green
     new Scalar( 75.0,  50.0, 255.0), // Red
     new Scalar(125.0, 255.0, 255.0)  // Yellow
