@@ -53,10 +53,13 @@ public final class Main
     final UsbCamera camera = new UsbCamera("usbcam", 0);
     camera.setConnectVerbose(1);
     camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
+    camera.setVideoMode(PixelFormat.kYUYV, width, height, fps);
     camera.setBrightness(50);
     // Crashes with some cameras
-    // camera.setExposureAuto();
-    camera.setVideoMode(PixelFormat.kYUYV, width, height, fps);
+    camera.setExposureAuto();
+    // Default uses 'auto' white balance.
+    // This creates overly colorful images, but better for color detection
+    camera.setWhiteBalanceManual(6500);
 
     System.out.println("Starting camera image server");
     final CameraServer server = CameraServer.getInstance();
