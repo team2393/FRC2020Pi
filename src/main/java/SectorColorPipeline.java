@@ -55,14 +55,14 @@ public class SectorColorPipeline implements VisionPipeline
   // Minumum and maximum BGR range for each color
   private final Scalar[] bgr_min =
   {
-    new Scalar(150.0,   0.0,   0.0), // Blue
+    new Scalar(120.0,   0.0,   0.0), // Blue
     new Scalar(  0.0, 130.0,   0.0), // Green
     new Scalar(  0.0,   0.0, 140.0), // Red
     new Scalar(  0.0, 165.0, 190.0)  // Yellow
   },                     bgr_max =
   {
-    new Scalar(255.0, 255.0, 120.0), // Blue
-    new Scalar(145.0, 255.0, 120.0), // Green
+    new Scalar(255.0, 255.0, 140.0), // Blue
+    new Scalar(115.0, 255.0, 140.0), // Green
     new Scalar( 75.0,  50.0, 255.0), // Red
     new Scalar(125.0, 255.0, 255.0)  // Yellow
   };
