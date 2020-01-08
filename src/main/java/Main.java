@@ -5,6 +5,9 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
@@ -24,9 +27,33 @@ public final class Main
   public static final boolean server = false;
   public static final int width = 320, height = 240, fps = 30;
 
-  public static void main(String... args)
+  /** Connect to the web port of the RIO
+   *  @return Seconds spent trying
+   */
+  public static int waitForRIO() throws Exception
   {
+    final String address = String.format("10.%02d.%02d.2", team / 100, team % 100);
+    int connect_trials = 0;
+    SocketChannel rio = SocketChannel.open(new InetSocketAddress(InetAddress.getByName(address), 80));
+    while (! rio.isConnected())
+    {
+      ++connect_trials;
+      Thread.sleep(1000);
+    }
+    return connect_trials;
+  }
+
+  public static void main(String... args) throws Exception
+  {
+    // When RIO, Radio/Network switch and Pi are all powered up,
+    // the Pi tends to be 'up' before it can connect to the Network Tables on the RIO.
+    // NT 'isConnected()' will report true, but the NT values still don't
+    // seem to change on the RIO.
+    // First waiting until we can reach the RIO seems to help.
+    final int connect_trials = waitForRIO();
+
     // Start NetworkTables
+    int nt_attempts = 1;
     final NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
     if (server)
     {
@@ -37,6 +64,11 @@ public final class Main
     {
       System.out.println("NetworkTables client for team " + team);
       ntinst.startClientTeam(team);
+      while (! ntinst.isConnected())
+      {
+        ++nt_attempts;
+        Thread.sleep(1000);
+      }
     }
 
     // From https://www.chiefdelphi.com/t/networking-a-raspberry-pi/335503/16
@@ -97,7 +129,11 @@ public final class Main
       }
       final int calls = my_pipeline.calls.getAndSet(0);
       final int cps = calls/10;
-      System.out.println(LocalDateTime.now() + " - My Pipeline: " + cps + " calls per second");
+      System.out.println(LocalDateTime.now() + " - My Pipeline: " + cps + " calls per second, " +
+                         (ntinst.isConnected() ? "NT connected" : "NT disconnected") +
+                         " after " + nt_attempts + " attempts " +
+                         " with RIO first seen after " + connect_trials);
+
       SmartDashboard.putNumber("PipelineCPS", cps);
     }
   }
