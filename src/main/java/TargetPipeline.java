@@ -64,6 +64,7 @@ public class TargetPipeline implements VisionPipeline
     SmartDashboard.setDefaultNumber("LumMax", hls_max.val[1]);
     SmartDashboard.setDefaultNumber("SatMin", hls_min.val[2]);
     SmartDashboard.setDefaultNumber("SatMax", hls_max.val[2]);
+    SmartDashboard.setDefaultNumber("AreaMin", 0.0);
   }
 
   private int[] center_hls = new int[] { 0, 0, 0 };
@@ -114,7 +115,7 @@ public class TargetPipeline implements VisionPipeline
 
     // Get largest contour
     MatOfPoint largest_contour = null;
-    double max_area = 0.0;
+    double max_area = SmartDashboard.getNumber("AreaMin", 0.0);
     for (int i=0; i<contours.size(); ++i)
     {
       final MatOfPoint contour = contours.get(i);
@@ -125,7 +126,7 @@ public class TargetPipeline implements VisionPipeline
         largest_contour = contour;
       }
     }
-    
+    SmartDashboard.putNumber("Area", max_area);    
     if (largest_contour != null)
     {
       // Show largest contour
