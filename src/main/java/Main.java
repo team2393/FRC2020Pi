@@ -87,12 +87,11 @@ public final class Main
     camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
     camera.setVideoMode(PixelFormat.kYUYV, width, height, fps);
     camera.setBrightness(50);
-    // Crashes with some cameras
-    camera.setExposureAuto();
+    camera.setExposureManual(50);
     // Default uses 'auto' white balance.
     // This creates overly colorful images, but better for color detection
     camera.setWhiteBalanceManual(6500);
-
+    
     System.out.println("Starting camera image server");
     final CameraServer server = CameraServer.getInstance();
     server.startAutomaticCapture(camera);
@@ -102,7 +101,8 @@ public final class Main
 
     // Select a pipeline to process the image
     // final PinkBlobPipeline my_pipeline = new PinkBlobPipeline(processed, width, height);
-    final SectorColorPipeline my_pipeline = new SectorColorPipeline(processed, width, height);
+    // final SectorColorPipeline my_pipeline = new SectorColorPipeline(processed, width, height);
+    final TargetPipeline my_pipeline = new TargetPipeline(processed, width, height);
     
     final VisionThread vision_thread = new VisionThread(camera, my_pipeline, pipeline ->
     {
