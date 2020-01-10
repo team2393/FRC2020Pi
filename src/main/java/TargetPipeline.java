@@ -99,8 +99,7 @@ public class TargetPipeline implements VisionPipeline
     center_hls[1] = Byte.toUnsignedInt(probe[1]);
     center_hls[2] = Byte.toUnsignedInt(probe[2]);
     
-    // Filter on Hue, Luminance and Saturation to get pink,
-    // using the hls_min/max values that can be updated on the dashboard.
+    // Filter on Hue, Luminance and Saturation
     hls_min.val[0] = SmartDashboard.getNumber("HueMin", hls_min.val[0]);
     hls_max.val[0] = SmartDashboard.getNumber("HueMax", hls_max.val[0]);
     hls_min.val[1] = SmartDashboard.getNumber("LumMin", hls_min.val[1]);
@@ -192,7 +191,7 @@ public class TargetPipeline implements VisionPipeline
 
     // Publish 'output'
     // a) Show HLS filter
-    // output.putFrame(tmp1);
+    // output.putFrame(filt);
     // b) Show original image with overlay
     output.putFrame(frame);
 
