@@ -25,24 +25,24 @@ import org.opencv.imgproc.Imgproc;
 /** Pipeline that looks for target */
 public class TargetPipeline implements VisionPipeline
 {
-  // Scaling factor for reduced size of processed image
-  public static final int scale = 2;
-  
   private final CvSource output;
-  private final int width, height, proc_width, proc_height;
+  private final int width, height;
 
   // Intermediate images used for processing
-  private final Mat small = new Mat(), norm = new Mat(),
+  private final Mat norm = new Mat(), blur = new Mat(), 
                     hls = new Mat(), filt = new Mat(), tmp = new Mat();
   
   // Counter for calls to `process()`
   public AtomicInteger calls = new AtomicInteger();
 
+// TODO Camera needs to be 'dark':
+// Low 'brightness' and 'exposure_absolute' 
+
   // Hue (0-180), Luminance (0-255), Saturation (0-255) filter
   // In principle looking for 'green' light,
   // but biggest emphasis is on 'bright'.
-  private final Scalar hls_min = new Scalar(  0.0, 200.0,   0.0);
-  private final Scalar hls_max = new Scalar( 60.0, 255.0, 255.0);
+  private final Scalar hls_min = new Scalar( 50.0,  50.0,  20.0);
+  private final Scalar hls_max = new Scalar( 90.0, 255.0, 255.0);
 
   private final List<MatOfPoint> contours = new ArrayList<>();
 
@@ -55,8 +55,6 @@ public class TargetPipeline implements VisionPipeline
     this.output = output;
     this.width = width;
     this.height = height;
-    proc_width = width / scale;
-    proc_height = height / scale;
 
     SmartDashboard.setDefaultNumber("HueMin", hls_min.val[0]);
     SmartDashboard.setDefaultNumber("HueMax", hls_max.val[0]);
@@ -83,18 +81,24 @@ public class TargetPipeline implements VisionPipeline
     // but within one process call always using it for the
     // same purpose.
 
-    // Resize to use less CPU & memory to process 
-    Imgproc.resize(frame, small, new Size(proc_width, proc_height));
+    // Resizing the image would save CPU & memory,
+    // but image is already small enough for us to handle
     
     // Scale colors to use full 0..255 range in case image was dark
-    Core.normalize(small, norm, 0.0, 255.0, Core.NORM_MINMAX);
+    Core.normalize(frame, norm, 0.0, 255.0, Core.NORM_MINMAX);
+
+    // When moving the camera, or turning auto-focus off and de-focusing,
+    // we would detect the target, but when standing still and in perfect focus,
+    // we missed it?!
+    // --> Blurring the image helps detect the target!
+    Imgproc.blur(norm, blur, new Size(4, 4));
 
     // Convert to HLS
-    Imgproc.cvtColor(norm, hls, Imgproc.COLOR_BGR2HLS);
+    Imgproc.cvtColor(blur, hls, Imgproc.COLOR_BGR2HLS);
 
     // Probe HLS at center of image
     final byte[] probe = new byte[3];
-    hls.get(proc_height/2, proc_width/2, probe);
+    hls.get(height/2, width/2, probe);
     center_hls[0] = Byte.toUnsignedInt(probe[0]);
     center_hls[1] = Byte.toUnsignedInt(probe[1]);
     center_hls[2] = Byte.toUnsignedInt(probe[2]);
@@ -113,7 +117,7 @@ public class TargetPipeline implements VisionPipeline
     Imgproc.findContours(filt, contours, tmp, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
     // Get largest contour
-    MatOfPoint largest_contour = null;
+    int largest_contour_index = -1;
     double max_area = SmartDashboard.getNumber("AreaMin", 0.0);
     for (int i=0; i<contours.size(); ++i)
     {
@@ -122,24 +126,17 @@ public class TargetPipeline implements VisionPipeline
       if (area > max_area)
       {
         max_area = area;
-        largest_contour = contour;
+        largest_contour_index = i;
       }
     }
-    SmartDashboard.putNumber("Area", max_area);    
-    if (largest_contour != null)
+    if (largest_contour_index >= 0)
     {
       // Show largest contour
-      final int points = largest_contour.size(0);
-      Point last = null;
-      for (int i=0; i<points; ++i)
-      {
-        final double[] xy = largest_contour.get(i, 0);
-        final Point point = new Point(xy[0]*scale, xy[1]*scale);
-        if (i > 0)
-        Imgproc.line(frame, last, point, overlay_bgr);
-        last = point;
-      }
-      
+      Imgproc.drawContours(frame, contours, largest_contour_index, overlay_bgr);
+
+      MatOfPoint largest_contour = contours.get(largest_contour_index);
+
+
       // Arrow from mid-bottom of image to center of blob
       Rect largest = Imgproc.boundingRect(largest_contour);
       // Imgproc.rectangle(frame,
@@ -149,17 +146,21 @@ public class TargetPipeline implements VisionPipeline
       //                  overlay_bgr);
       Imgproc.arrowedLine(frame,
                           new Point(width/2, height-1),
-                          new Point((largest.x + largest.width/2) * scale,
-                                    (largest.y + largest.height/2)* scale),
+                          new Point(largest.x + largest.width/2,
+                                    largest.y + largest.height/2),
                           overlay_bgr);
       // Publish direction to detected blob in pixels from center
       // 0 - In center or not found, i.e. no reason to move
       // positive 1 .. width/2: Blob is to the right of center
       // negative -1 .. -width/2: .. left of center
-      SmartDashboard.putNumber("Direction", largest.x*scale - width/2);
+      SmartDashboard.putNumber("Direction", largest.x - width/2);
+      SmartDashboard.putNumber("Area", max_area);    
     }
     else
+    {
       SmartDashboard.putNumber("Direction", 0);
+      SmartDashboard.putNumber("Area", 0);    
+    }
 
     // Show rect in center of image where pixel info is probed
     Imgproc.rectangle(frame,
@@ -170,7 +171,7 @@ public class TargetPipeline implements VisionPipeline
     // Show info at bottom of image.
     // Paint is twice, overlay-on-black, for better contrast
     final String info = String.format("Frame %3d H %3d L %3d S %3d",
-                                      calls.incrementAndGet(),
+                                      calls.get(),
                                       center_hls[0],
                                       center_hls[1],
                                       center_hls[2]);

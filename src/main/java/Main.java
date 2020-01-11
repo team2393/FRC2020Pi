@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import edu.wpi.cscore.CvSource;
 import edu.wpi.cscore.UsbCamera;
+import edu.wpi.cscore.VideoProperty;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.cscore.VideoMode.PixelFormat;
 import edu.wpi.first.cameraserver.CameraServer;
@@ -86,11 +87,22 @@ public final class Main
     camera.setConnectVerbose(1);
     camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
     camera.setVideoMode(PixelFormat.kYUYV, width, height, fps);
-    camera.setBrightness(50);
-    camera.setExposureManual(50);
+
     // Default uses 'auto' white balance.
     // This creates overly colorful images, but better for color detection
     camera.setWhiteBalanceManual(6500);
+
+    // TODO low brightness, ..
+    // to get all initial settings correct at bootup
+    camera.setBrightness(10);
+    camera.setExposureManual(10);
+
+    // Focus: Auto?
+
+    for (VideoProperty property : camera.enumerateProperties())
+    {
+      System.out.println(property.getName() + " = " + property.get());
+    }
     
     System.out.println("Starting camera image server");
     final CameraServer server = CameraServer.getInstance();
