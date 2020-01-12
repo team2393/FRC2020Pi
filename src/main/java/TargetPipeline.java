@@ -35,14 +35,11 @@ public class TargetPipeline implements VisionPipeline
   // Counter for calls to `process()`
   public AtomicInteger calls = new AtomicInteger();
 
-// TODO Camera needs to be 'dark':
-// Low 'brightness' and 'exposure_absolute' 
-
   // Hue (0-180), Luminance (0-255), Saturation (0-255) filter
-  // In principle looking for 'green' light,
+  // In principle looking for 'green' light, hue ~ 75
   // but biggest emphasis is on 'bright'.
-  private final Scalar hls_min = new Scalar( 50.0,  50.0,  20.0);
-  private final Scalar hls_max = new Scalar( 90.0, 255.0, 255.0);
+  private final Scalar hls_min = new Scalar( 75-10,  50.0,  20.0);
+  private final Scalar hls_max = new Scalar( 75+10, 255.0, 255.0);
 
   private final List<MatOfPoint> contours = new ArrayList<>();
 

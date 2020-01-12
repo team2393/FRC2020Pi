@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import edu.wpi.cscore.CvSource;
@@ -42,6 +43,19 @@ public final class Main
       Thread.sleep(1000);
     }
     return connect_trials;
+  }
+
+  public static void show(final VideoProperty property)
+  {
+    System.out.print(property.getName() + " = ");
+    if (property.isInteger())
+      System.out.println("int " + property.get());
+    else if (property.isBoolean())
+      System.out.println("bool " + property.get());
+    else if (property.isEnum())
+      System.out.println("enum " + property.get() + " of " + Arrays.toString(property.getChoices()));
+    else if (property.isString())
+     System.out.println("string " + property.getString());
   }
 
   public static void main(String... args) throws Exception
@@ -87,22 +101,37 @@ public final class Main
     camera.setConnectVerbose(1);
     camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
     camera.setVideoMode(PixelFormat.kYUYV, width, height, fps);
-
+  
+    // Reflected light from target is quite bright and appears 'white'
+    // with default camera settings.
+    // Select low brightness, exposure and gain to get 'green'.
+    camera.setBrightness(10);    
+    // Some camera parameters are only accessible by name via 'getProperty'.
+    camera.getProperty("contrast").set(50);
+    camera.getProperty("saturation").set(50);
+    camera.getProperty("sharpness").set(50);
+    
     // Default uses 'auto' white balance.
     // This creates overly colorful images, but better for color detection
     camera.setWhiteBalanceManual(6500);
+    
+    // power_line_frequency = enum 2 of [Disabled, 50 Hz, 60 Hz]
+    // backlight_compensation = int 0
+    // exposure_auto = enum 1 of [, Manual Mode, , Aperture Priority Mode]
+    // exposure_absolute = int 10
+    // exposure_auto_priority = bool 1
+    camera.setExposureManual(3);
+    camera.getProperty("gain").set(20);
 
-    // TODO low brightness, ..
-    // to get all initial settings correct at bootup
-    camera.setBrightness(10);
-    camera.setExposureManual(10);
-
-    // Focus: Auto?
+    // pan_absolute = int 0
+    // tilt_absolute = int 0
+    // focus_absolute = int 0
+    // focus_auto = bool 1
+    // zoom_absolute = int 100
+    camera.getProperty("focus_auto").set(1);
 
     for (VideoProperty property : camera.enumerateProperties())
-    {
-      System.out.println(property.getName() + " = " + property.get());
-    }
+     show(property);
     
     System.out.println("Starting camera image server");
     final CameraServer server = CameraServer.getInstance();
