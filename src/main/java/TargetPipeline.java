@@ -141,16 +141,17 @@ public class TargetPipeline implements VisionPipeline
       //                   new Point((largest.x + largest.width)*scale,
       //                             (largest.y + largest.height)*scale),
       //                  overlay_bgr);
+      final int pos = largest.x + largest.width/2;
       Imgproc.arrowedLine(frame,
                           new Point(width/2, height-1),
-                          new Point(largest.x + largest.width/2,
+                          new Point(pos,
                                     largest.y + largest.height/2),
                           overlay_bgr);
       // Publish direction to detected blob in pixels from center
       // 0 - In center or not found, i.e. no reason to move
       // positive 1 .. width/2: Blob is to the right of center
       // negative -1 .. -width/2: .. left of center
-      SmartDashboard.putNumber("Direction", largest.x - width/2);
+      SmartDashboard.putNumber("Direction", pos - width/2);
       SmartDashboard.putNumber("Area", max_area);    
     }
     else
