@@ -50,11 +50,15 @@ public class TargetPipeline implements VisionPipeline
   private final Scalar overlay_bgr = new Scalar(200.0, 100.0, 255.0),
                       contrast_bgr = new Scalar(0 ,0, 0);
 
-  TargetPipeline(final CvSource output, int width, int height)
+  public final UDPServer udp;
+
+  TargetPipeline(final CvSource output, int width, int height) throws Exception
   {
     this.output = output;
     this.width = width;
     this.height = height;
+
+    udp = new UDPServer(5801);
 
     SmartDashboard.setDefaultNumber("HueMin", hls_min.val[0]);
     SmartDashboard.setDefaultNumber("HueMax", hls_max.val[0]);
@@ -154,12 +158,14 @@ public class TargetPipeline implements VisionPipeline
       // positive 1 .. width/2: Blob is to the right of center
       // negative -1 .. -width/2: .. left of center
       SmartDashboard.putNumber("Direction", largest.x - width/2);
+      udp.send(largest.x - width/2);
       SmartDashboard.putNumber("Area", max_area);    
     }
     else
     {
       SmartDashboard.putNumber("Direction", 0);
       SmartDashboard.putNumber("Area", 0);    
+      udp.send(0);
     }
 
     // Show rect in center of image where pixel info is probed
