@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Copyright (c) 2019 FIRST Team 2393. All Rights Reserved.                   */
+/* Copyright (c) 2020 FIRST Team 2393. All Rights Reserved.                   */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
 /* the project.                                                               */
@@ -9,7 +9,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.wpi.cscore.CvSource;
 import edu.wpi.cscore.UsbCamera;
@@ -42,6 +44,67 @@ public final class Main
       Thread.sleep(1000);
     }
     return connect_trials;
+  }
+
+  public static void show(final VideoProperty property)
+  {
+    System.out.print(property.getName() + " = ");
+    if (property.isInteger())
+      System.out.println("int " + property.get());
+    else if (property.isBoolean())
+      System.out.println("bool " + property.get());
+    else if (property.isEnum())
+      System.out.println("enum " + property.get() + " of " + Arrays.toString(property.getChoices()));
+    else if (property.isString())
+     System.out.println("string " + property.getString());
+  }
+
+  public static void normalSettings(final UsbCamera camera)
+  {
+    camera.setBrightness(50);    
+    camera.getProperty("contrast").set(50);
+    camera.getProperty("saturation").set(50);
+    camera.getProperty("sharpness").set(50);
+    
+    // Default uses 'auto' white balance.
+    // This creates overly colorful images, but better for color detection
+    camera.setWhiteBalanceManual(6500);
+    
+    camera.setExposureAuto();
+    camera.getProperty("gain").set(20);
+
+    camera.getProperty("focus_auto").set(1);
+  }
+
+  public static void targetSettings(final UsbCamera camera)
+  {
+  // Reflected light from target is quite bright and appears 'white'
+    // with default camera settings.
+    // Select low brightness, exposure and gain to get 'green'.
+    camera.setBrightness(10);    
+    // Some camera parameters are only accessible by name via 'getProperty'.
+    camera.getProperty("contrast").set(50);
+    camera.getProperty("saturation").set(50);
+    camera.getProperty("sharpness").set(50);
+    
+    // Default uses 'auto' white balance.
+    // This creates overly colorful images, but better for color detection
+    camera.setWhiteBalanceManual(6500);
+    
+    // power_line_frequency = enum 2 of [Disabled, 50 Hz, 60 Hz]
+    // backlight_compensation = int 0
+    // exposure_auto = enum 1 of [, Manual Mode, , Aperture Priority Mode]
+    // exposure_absolute = int 10
+    // exposure_auto_priority = bool 1
+    camera.setExposureManual(3);
+    camera.getProperty("gain").set(20);
+
+    // pan_absolute = int 0
+    // tilt_absolute = int 0
+    // focus_absolute = int 0
+    // focus_auto = bool 1
+    // zoom_absolute = int 100
+    camera.getProperty("focus_auto").set(1);
   }
 
   public static void main(String... args) throws Exception
@@ -87,22 +150,9 @@ public final class Main
     camera.setConnectVerbose(1);
     camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
     camera.setVideoMode(PixelFormat.kYUYV, width, height, fps);
-
-    // Default uses 'auto' white balance.
-    // This creates overly colorful images, but better for color detection
-    camera.setWhiteBalanceManual(6500);
-
-    // TODO low brightness, ..
-    // to get all initial settings correct at bootup
-    camera.setBrightness(10);
-    camera.setExposureManual(10);
-
-    // Focus: Auto?
-
+  
     for (VideoProperty property : camera.enumerateProperties())
-    {
-      System.out.println(property.getName() + " = " + property.get());
-    }
+     show(property);
     
     System.out.println("Starting camera image server");
     final CameraServer server = CameraServer.getInstance();
@@ -110,6 +160,12 @@ public final class Main
     
     System.out.println("Starting processing pipeline");
     final CvSource processed = server.putVideo("Processed", width, height);
+
+    // Allow selecting one of two modes via dashboard
+    // Set smashboard to different value so first run of vision thread
+    // will configure the camera since it looks as if mode was changed
+    final AtomicBoolean target_mode = new AtomicBoolean();
+    SmartDashboard.setDefaultBoolean("Camera Target Mode", !target_mode.get());
 
     // Select a pipeline to process the image
     // final PinkBlobPipeline my_pipeline = new PinkBlobPipeline(processed, width, height);
@@ -121,6 +177,17 @@ public final class Main
       // Our pipeline just updated image image on the dashboard.
       // Add # of calls.
       SmartDashboard.putNumber("PipelineCalls", pipeline.calls.get());
+
+      // Did the target mode change?
+      final boolean mode = SmartDashboard.getBoolean("Camera Target Mode", target_mode.get());
+      if (mode != target_mode.get())
+      { // Remember new mode and reconfigure camera
+        target_mode.set(mode);
+        if (mode)
+          targetSettings(camera);
+        else
+          normalSettings(camera);
+      }
 
       // Flush network tables so RIO can see the info ASAP
       ntinst.flush();

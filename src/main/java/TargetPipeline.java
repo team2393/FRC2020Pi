@@ -1,5 +1,5 @@
 /*----------------------------------------------------------------------------*/
-/* Copyright (c) 2019 FIRST Team 2393. All Rights Reserved.                   */
+/* Copyright (c) 2020 FIRST Team 2393. All Rights Reserved.                   */
 /* Open Source Software - may be modified and shared by FRC teams. The code   */
 /* must be accompanied by the FIRST BSD license file in the root directory of */
 /* the project.                                                               */
@@ -35,14 +35,11 @@ public class TargetPipeline implements VisionPipeline
   // Counter for calls to `process()`
   public AtomicInteger calls = new AtomicInteger();
 
-// TODO Camera needs to be 'dark':
-// Low 'brightness' and 'exposure_absolute' 
-
   // Hue (0-180), Luminance (0-255), Saturation (0-255) filter
-  // In principle looking for 'green' light,
+  // In principle looking for 'green' light, hue ~ 75
   // but biggest emphasis is on 'bright'.
-  private final Scalar hls_min = new Scalar( 50.0,  50.0,  20.0);
-  private final Scalar hls_max = new Scalar( 90.0, 255.0, 255.0);
+  private final Scalar hls_min = new Scalar( 75-10,  50.0,  20.0);
+  private final Scalar hls_max = new Scalar( 75+10, 255.0, 255.0);
 
   private final List<MatOfPoint> contours = new ArrayList<>();
 
@@ -148,17 +145,18 @@ public class TargetPipeline implements VisionPipeline
       //                   new Point((largest.x + largest.width)*scale,
       //                             (largest.y + largest.height)*scale),
       //                  overlay_bgr);
+      final int pos = largest.x + largest.width/2;
       Imgproc.arrowedLine(frame,
                           new Point(width/2, height-1),
-                          new Point(largest.x + largest.width/2,
+                          new Point(pos,
                                     largest.y + largest.height/2),
                           overlay_bgr);
       // Publish direction to detected blob in pixels from center
       // 0 - In center or not found, i.e. no reason to move
       // positive 1 .. width/2: Blob is to the right of center
       // negative -1 .. -width/2: .. left of center
-      SmartDashboard.putNumber("Direction", largest.x - width/2);
-      udp.send(largest.x - width/2);
+      SmartDashboard.putNumber("Direction", pos - width/2);
+      udp.send(pos - width/2);
       SmartDashboard.putNumber("Area", max_area);    
     }
     else
