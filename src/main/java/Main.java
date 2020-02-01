@@ -93,6 +93,12 @@ public final class Main
     
     // power_line_frequency = enum 2 of [Disabled, 50 Hz, 60 Hz]
     // backlight_compensation = int 0
+
+    // Unclear how exposure_auto, auto_priority and absolute cooperate.
+    // Selecting a long exposure can reduce the FPS,
+    // but then selecting a manual short exposure doesn't always restore
+    // higher FPS until the 3 settings are changed in a certain order?!
+    //
     // exposure_auto = enum 1 of [, Manual Mode, , Aperture Priority Mode]
     // exposure_absolute = int 10
     // exposure_auto_priority = bool 1
