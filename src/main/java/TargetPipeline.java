@@ -94,7 +94,7 @@ public class TargetPipeline implements VisionPipeline
     // --> Blurring the image helps detect the target!
     Imgproc.blur(norm, blur, new Size(4, 4));
 
-    // Convert to HLS
+    // Convert to HLS TODO Try HSV
     Imgproc.cvtColor(blur, hls, Imgproc.COLOR_BGR2HLS);
 
     // Probe HLS at center of image
@@ -124,11 +124,20 @@ public class TargetPipeline implements VisionPipeline
     {
       final MatOfPoint contour = contours.get(i);
       final double area = Imgproc.contourArea(contour);
+            
+      // TODO Filter on min..max area  Lights etc. could be larger than target
       if (area > max_area)
       {
         max_area = area;
         largest_contour_index = i;
       }
+      
+      // TODO Filter on fullness: 0 (hollow) .. 1 (solid, full)
+      // final Rect bounds = Imgproc.boundingRect(contour);
+      // final double fullness = bounds.width * bounds.height / area;
+
+      // TODO Filter on aspect ratio 0 (tall) .. 1 (square) .. 20 (wide)
+      // final double aspect = bounds.width / bounds.height;
     }
     if (largest_contour_index >= 0)
     {
