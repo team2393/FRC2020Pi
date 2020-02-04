@@ -192,7 +192,7 @@ public class TargetPipeline implements VisionPipeline
       final int distance = height/2 - vert_pos;
       SmartDashboard.putNumber("Direction", direction);
       SmartDashboard.putNumber("Distance", distance);
-      udp.send(direction);
+      udp.send(direction, distance);
       SmartDashboard.putNumber("Area", largest_area);    
 
       final double fullness = 100.0 * largest_area / (bounds.width * bounds.height);
@@ -208,7 +208,7 @@ public class TargetPipeline implements VisionPipeline
       SmartDashboard.putNumber("Area", 0);    
       SmartDashboard.putNumber("Fullness", -1);    
       SmartDashboard.putNumber("Aspect", -1);    
-      udp.send(0);
+      udp.send(0, 0);
     }
 
     // Show rect in center of image where pixel info is probed

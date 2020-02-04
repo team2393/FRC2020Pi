@@ -19,7 +19,7 @@ import java.util.List;
 public class UDPServer
 {
   private final DatagramChannel udp;
-  private final ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+  private final ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES*2);
   private final List<InetSocketAddress> broadcasts = new ArrayList<>();
 
   public UDPServer(final int port) throws Exception
@@ -43,14 +43,15 @@ public class UDPServer
     System.out.println("UDP Server broadcasting to " + broadcasts);
   }
 
-  public void send(final int number)
+  public void send(final int direction, final int distance)
   {
     // Place number in byte buffer
     try
     {
       buffer.clear();
-      buffer.putInt(number);
-      
+      buffer.putInt(direction);
+      buffer.putInt(distance);
+
       // Send as broadcast
       for (InetSocketAddress addr : broadcasts)
       {
