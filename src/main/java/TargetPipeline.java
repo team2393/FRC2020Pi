@@ -179,7 +179,7 @@ public class TargetPipeline implements VisionPipeline
         int sat_min = 255, sat_max = 0;
         int val_min = 255, val_max = 0;
         // pointPolygonTest needs MatOfPoint__2f__?!
-        final MatOfPoint2f the_contour = new MatOfPoint2f(largest_contour);
+        final MatOfPoint2f the_contour = new MatOfPoint2f(largest_contour.toArray());
         // Check all points (x, y) in the image..
         for (int x=0; x<width; ++x)
           for (int y=0; y<height; ++y)
@@ -188,20 +188,23 @@ public class TargetPipeline implements VisionPipeline
               hsv.get(y, x, probe);
 
               // Update HSV min..max
-              if (probe[0] < hue_min)
-                hue_min = probe[0];
-              if (probe[0] > hue_max)
-                hue_max = probe[0];
+              int unsigned = Byte.toUnsignedInt(probe[0]); 
+              if (unsigned < hue_min)
+                hue_min = unsigned;
+              if (unsigned > hue_max)
+                hue_max = unsigned;
   
-              if (probe[1] < sat_min)
-                sat_min = probe[1];
-              if (probe[1] > sat_max)
-                sat_max = probe[1];
+              unsigned = Byte.toUnsignedInt(probe[1]); 
+              if (unsigned < sat_min)
+                sat_min = unsigned;
+              if (unsigned > sat_max)
+                sat_max = unsigned;
   
-              if (probe[2] < val_min)
-                val_min = probe[2];
-              if (probe[2] > val_max)
-                val_max = probe[2];
+              unsigned = Byte.toUnsignedInt(probe[2]); 
+              if (unsigned < val_min)
+                val_min = unsigned;
+              if (unsigned > val_max)
+                val_max = unsigned;
             }
         // TODO the_contour.release(); ?
         System.out.format("H: %3d ... %3d   S: %3d ... %3d   V: %3d ... %3d\n",
