@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -61,6 +62,7 @@ public class TargetPipeline implements VisionPipeline
 
     udp = new UDPServer(5801);
 
+    SmartDashboard.setDefaultBoolean("SetHSV", false);
     SmartDashboard.setDefaultNumber("HueMin", hsv_min.val[0]);
     SmartDashboard.setDefaultNumber("HueMax", hsv_max.val[0]);
     SmartDashboard.setDefaultNumber("SatMin", hsv_min.val[1]);
@@ -166,6 +168,53 @@ public class TargetPipeline implements VisionPipeline
       // Show largest contour
       Imgproc.drawContours(frame, contours, largest_contour_index, overlay_bgr);
       final MatOfPoint largest_contour = contours.get(largest_contour_index);
+
+      // Update HSV min..max to values used by this contour?
+      if (SmartDashboard.getBoolean("SetHSV", false))
+      { // Clear the flag so we only do this once (until flag set again)
+        SmartDashboard.putBoolean("SetHSV", false);
+        // Initialize w/ values from the 'opposite end' of the range
+        // so first pixel will update to actual min..max
+        int hue_min = 128, hue_max = 0;
+        int sat_min = 255, sat_max = 0;
+        int val_min = 255, val_max = 0;
+        // pointPolygonTest needs MatOfPoint__2f__?!
+        final MatOfPoint2f the_contour = new MatOfPoint2f(largest_contour);
+        // Check all points (x, y) in the image..
+        for (int x=0; x<width; ++x)
+          for (int y=0; y<height; ++y)
+            if (Imgproc.pointPolygonTest(the_contour, new Point(x, y), false) >= 0)
+            { // Pixel (x, y) is inside the contour, get its HSV
+              hsv.get(y, x, probe);
+
+              // Update HSV min..max
+              if (probe[0] < hue_min)
+                hue_min = probe[0];
+              if (probe[0] > hue_max)
+                hue_max = probe[0];
+  
+              if (probe[1] < sat_min)
+                sat_min = probe[1];
+              if (probe[1] > sat_max)
+                sat_max = probe[1];
+  
+              if (probe[2] < val_min)
+                val_min = probe[2];
+              if (probe[2] > val_max)
+                val_max = probe[2];
+            }
+        // TODO the_contour.release(); ?
+        System.out.format("H: %3d ... %3d   S: %3d ... %3d   V: %3d ... %3d\n",
+                          hue_min, hue_max,
+                          sat_min, sat_max,
+                          val_min, val_max);
+        SmartDashboard.putNumber("HueMin", hue_min);
+        SmartDashboard.putNumber("HueMax", hue_max);
+        SmartDashboard.putNumber("SatMin", sat_min);
+        SmartDashboard.putNumber("SatMax", sat_max);
+        SmartDashboard.putNumber("ValMin", val_min);
+        SmartDashboard.putNumber("ValMax", val_max);
+      }
 
       // Arrow from mid-bottom of image to center of blob
       Rect bounds = Imgproc.boundingRect(largest_contour);
