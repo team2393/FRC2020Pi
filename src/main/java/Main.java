@@ -81,7 +81,7 @@ public final class Main
   // Reflected light from target is quite bright and appears 'white'
     // with default camera settings.
     // Select low brightness, exposure and gain to get 'green'.
-    camera.setBrightness(10);    
+    camera.setBrightness(2);    
     // Some camera parameters are only accessible by name via 'getProperty'.
     camera.getProperty("contrast").set(50);
     camera.getProperty("saturation").set(50);
@@ -102,7 +102,7 @@ public final class Main
     // exposure_auto = enum 1 of [, Manual Mode, , Aperture Priority Mode]
     // exposure_absolute = int 10
     // exposure_auto_priority = bool 1
-    camera.setExposureManual(3);
+    camera.setExposureManual(2);
     camera.getProperty("gain").set(20);
 
     // pan_absolute = int 0
