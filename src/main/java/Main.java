@@ -167,6 +167,17 @@ public final class Main
     System.out.println("Starting processing pipeline");
     final CvSource processed = server.putVideo("Processed", width, height);
 
+    // https://www.chiefdelphi.com/t/need-to-compress-opencv-generated-image-being-served-to-shuffleboard/378887
+    // Instead of
+    //  processed = server.putVideo("OperatorImage", 640, 45);
+    // you can do:
+    //
+    //  CvSource processed = new CvSource("OperatorImage", VideoMode.PixelFormat.kMJPEG, 640, 45, 30);
+    //  MjpegServer mjpegServer = server.startAutomaticCapture(processed);
+    //  mjpegServer.setCompression(50);
+    // and then manipulate mjpegServer as you see fit.
+
+
     // Allow selecting one of two modes via dashboard
     // Set smashboard to different value so first run of vision thread
     // will configure the camera since it looks as if mode was changed
