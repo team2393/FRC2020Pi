@@ -5,6 +5,7 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
@@ -15,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.wpi.cscore.CvSource;
 import edu.wpi.cscore.UsbCamera;
+import edu.wpi.cscore.UsbCameraInfo;
 import edu.wpi.cscore.VideoProperty;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.cscore.VideoMode.PixelFormat;
@@ -149,9 +151,32 @@ public final class Main
     // This is how the Limelight gets low latency updates via NetworkTables.    
     ntinst.setUpdateRate(1.00);
 
+    // On the Pi,  there always seem to be devices
+    //   /dev/video10, 11 and 12.
+    // even with no camera.
+    // When an actual USB camera is plugged in,
+    // `lsusb` will show a device like "Logitec, Inc. OrbiCam"
+    // and there will be an additional entry pair
+    //   /dev/video0 and /dev/video1
+    
+    for (int i=0; i<20;  ++i)
+    {
+      final File camera_file = new File("/dev/video" + i);
+      if (camera_file.exists())
+      System.out.println("Found " + camera_file);
+    }
+    
+    System.out.println("USB Cameras:");
+    for (UsbCameraInfo usb : UsbCamera.enumerateUsbCameras())
+    {
+      System.out.println(usb.dev + ": " +
+      usb.name +
+      " at " + usb.path +
+      " " + Arrays.toString(usb.otherPaths));
+    }
     // Start camera
     System.out.println("Starting camera");
-
+    
     final UsbCamera camera = new UsbCamera("usbcam", 0);
     camera.setConnectVerbose(1);
     camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
