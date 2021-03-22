@@ -29,7 +29,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public final class Main
 {
   public static final int team = 2393;
-  public static final boolean server = false;
+  // TODO: For standalone tests, use 'server' mode.
+  //       WHen running on robot, disable 'server' mode.
+  public static final boolean server = true;
   public static final int width = 320, height = 240, fps = 30;
 
   /** Connect to the web port of the RIO
@@ -38,6 +40,8 @@ public final class Main
   public static int waitForRIO() throws Exception
   {
     final String address = String.format("10.%02d.%02d.2", team / 100, team % 100);
+   
+    System.out.println("Waiting for roboRIO on " + address);
     int connect_trials = 0;
     SocketChannel rio = SocketChannel.open(new InetSocketAddress(InetAddress.getByName(address), 80));
     while (! rio.isConnected())
@@ -117,12 +121,16 @@ public final class Main
 
   public static void main(String... args) throws Exception
   {
+    System.out.println("********************************************");
+    System.out.println("** FRC2020Pi                              **");
+    System.out.println("********************************************");
+
     // When RIO, Radio/Network switch and Pi are all powered up,
     // the Pi tends to be 'up' before it can connect to the Network Tables on the RIO.
     // NT 'isConnected()' will report true, but the NT values still don't
     // seem to change on the RIO.
     // First waiting until we can reach the RIO seems to help.
-    final int connect_trials = waitForRIO();
+    final int connect_trials = server ? -1 : waitForRIO();
 
     // Start NetworkTables
     int nt_attempts = 1;
@@ -212,8 +220,13 @@ public final class Main
     // Select a pipeline to process the image
     // final PinkBlobPipeline my_pipeline = new PinkBlobPipeline(processed, width, height);
     // final SectorColorPipeline my_pipeline = new SectorColorPipeline(processed, width, height);
-    final TargetPipeline my_pipeline = new TargetPipeline(processed, width, height);
-    
+
+    // TODO Find target or first ball?
+    //    final TargetPipeline my_pipeline = new TargetPipeline(processed, width, height);
+    final BallPipeline my_pipeline = new BallPipeline(processed, width, height);
+
+    System.out.println("** Pipeline: " + my_pipeline.getClass().getName());
+
     final VisionThread vision_thread = new VisionThread(camera, my_pipeline, pipeline ->
     {
       // Our pipeline just updated image image on the dashboard.

@@ -5,6 +5,8 @@ Raspberry Pi code for FRC 2020 vision processing.
 
 In VSCode, use File, Open Folder to edit.
 
+In Main.java, note TODO comments.
+
 To build in Windows cmd:
 
 ```

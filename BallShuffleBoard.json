@@ -1,0 +1,201 @@
+{
+  "tabPane": [
+    {
+      "title": "RotationTest",
+      "autoPopulate": true,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 128.0,
+        "showGrid": false,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "tiles": {
+          "0,0": {
+            "size": [
+              3,
+              3
+            ],
+            "content": {
+              "_type": "Grid Layout",
+              "_title": "Rotate To Target",
+              "Layout/Number of columns": 1,
+              "Layout/Number of rows": 5,
+              "Layout/Label position": "LEFT",
+              "_children": {
+                "0,1": {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/Distance",
+                  "_title": "/SmartDashboard/Distance"
+                },
+                "0,0": {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/Direction",
+                  "_title": "/SmartDashboard/Direction"
+                },
+                "0,2": {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/Aspect",
+                  "_title": "SmartDashboard/Aspect"
+                },
+                "0,3": {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/Fullness",
+                  "_title": "SmartDashboard/Fullness"
+                },
+                "0,4": {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/Area",
+                  "_title": "SmartDashboard/Area"
+                }
+              }
+            }
+          },
+          "6,0": {
+            "size": [
+              4,
+              3
+            ],
+            "content": {
+              "_type": "Camera Stream",
+              "_source0": "camera_server://Processed",
+              "_title": "Processed",
+              "Crosshair/Show crosshair": false,
+              "Crosshair/Crosshair color": "#808080FF",
+              "Controls/Show controls": false,
+              "Controls/Rotation": "NONE",
+              "compression": -1.0,
+              "fps": -1,
+              "imageWidth": -1,
+              "imageHeight": -1
+            }
+          },
+          "3,0": {
+            "size": [
+              3,
+              4
+            ],
+            "content": {
+              "_type": "List Layout",
+              "_title": "Filter",
+              "Layout/Label position": "LEFT",
+              "_children": [
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/HueMin",
+                  "_title": "SmartDashboard/HueMin"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/HueMax",
+                  "_title": "SmartDashboard/HueMax"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/SatMin",
+                  "_title": "SmartDashboard/SatMin"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/SatMax",
+                  "_title": "SmartDashboard/SatMax"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/ValMin",
+                  "_title": "SmartDashboard/ValMin"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/ValMax",
+                  "_title": "SmartDashboard/ValMax"
+                },
+                {
+                  "_type": "Toggle Button",
+                  "_source0": "network_table:///SmartDashboard/Camera Target Mode",
+                  "_title": "SmartDashboard/Camera Target Mode"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/AspectMin",
+                  "_title": "SmartDashboard/AspectMin"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/AspectMax",
+                  "_title": "SmartDashboard/AspectMax"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/FullnessMin",
+                  "_title": "SmartDashboard/FullnessMin"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/FullnessMax",
+                  "_title": "SmartDashboard/FullnessMax"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/AreaMin",
+                  "_title": "SmartDashboard/AreaMin"
+                },
+                {
+                  "_type": "Text View",
+                  "_source0": "network_table:///SmartDashboard/AreaMax",
+                  "_title": "SmartDashboard/AreaMax"
+                },
+                {
+                  "_type": "Toggle Button",
+                  "_source0": "network_table:///SmartDashboard/SetHSV",
+                  "_title": "SmartDashboard/SetHSV"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Auto",
+      "autoPopulate": false,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 128.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "tiles": {
+          "1,0": {
+            "size": [
+              2,
+              1
+            ],
+            "content": {
+              "_type": "ComboBox Chooser",
+              "_source0": "network_table:///SmartDashboard/Autonomous",
+              "_title": "/SmartDashboard/Autonomous"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Tab 3",
+      "autoPopulate": true,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 128.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "tiles": {}
+      }
+    }
+  ],
+  "windowGeometry": {
+    "x": 57.20000076293945,
+    "y": 0.0,
+    "width": 1447.5999755859375,
+    "height": 829.5999755859375
+  }
+}
