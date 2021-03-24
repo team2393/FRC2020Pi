@@ -31,7 +31,7 @@ public final class Main
   public static final int team = 2393;
   // TODO: For standalone tests, use 'server' mode.
   //       WHen running on robot, disable 'server' mode.
-  public static final boolean server = true;
+  public static final boolean server = false;
   public static final int width = 320, height = 240, fps = 30;
 
   /** Connect to the web port of the RIO
